@@ -1,0 +1,110 @@
+---
+title: "RepData_PeerAssessment2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+library(lubridate)
+library(ggplot2)
+```
+
+## Title
+
+
+## Synopsis
+
+
+## Data Processing
+
+```{r DataLoading, cache= TRUE}
+
+# Downloading the data
+
+#download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "./Data.csv.bz2", method = "curl")
+
+Data <- read.csv("./Data.csv", header = T)
+# Dim 902297*37
+
+str(Data)
+
+```
+
+### Looking at the data
+
+First we can aim to reducing the size of data. Filtering out unwanted data varaibles can be done in multiple ways like :
+
+#### One can prioritize the variables required based on the question asked.
+
+In our case our 2 important questions are :  
+        1. Population Health  
+        2. Economic loss  
+
+Thus the columns like EVTYPE, FATALITIES, INJURIES, PROPDMG, CROPDMG seem relevant.  
+
+```{r Subsetting_Relevant_Vars}
+Imp_Vars <- c("BGN_DATE", "EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "CROPDMG" )
+Data.subset <- Data[,Imp_Vars]
+
+```
+
+#### We can also focus on the most frequent events as they're more likely to happen.  
+
+Then first we see the frequency of each event and select the top fifty.  
+
+
+```{r FrequentEvents}
+
+# Limiting ourselves top 50 most frequent events.
+Events <- table(Data.subset$EVTYPE)
+Events <- sort(Events, decreasing = T)
+#sum(Events[1:50]) == 894432; Thus our top 50 frequent incidents cover 99% data points/ rows. Rest of the 935 events are once in chance events probably.
+
+Most_Freq_Events <- names(Events)[1:50]
+
+Get_RowIndices_Event <- function(Event) { which(Data.subset$EVTYPE == Event)}
+
+Row_I <- unlist(lapply(Most_Freq_Events, Get_RowIndices_Event))
+Data.subset <- Data.subset[Row_I,]
+# Dim 894432*6
+
+```
+
+
+#### Take an estimate of the missing data in the above shortlisted variables  
+
+```{r MissingData}
+
+FatalitybyEvent <- aggregate(FATALITIES + INJURIES~ EVTYPE, data = Data.subset, sum)
+
+Data.subset$Year <-year(mdy_hms(Data.subset$BGN_DATE))
+Newdf <- melt(Data.subset, id =c("EVTYPE", "Year"), measure.vars = 3:6 )
+
+Year_Casualty <- dcast(Newdf, EVTYPE + Year ~ variable, sum)
+'
+ggplot( data = Year_Casualty, aes(x =Year)) + geom_line(aes(y = log2(INJURIES)), color = "firebrick1",size = 1) +   geom_line(aes(y = log2(FATALITIES)), color = "darkred", linetype="twodash") + 
+geom_line(aes(y = log2(PROPDMG)), color = "darkslateblue") +
+geom_line(aes(y = log2(CROPDMG)), color = "darkolivegreen") +
+    facet_wrap(~EVTYPE)'
+
+Event_Casualty <- dcast(Newdf,EVTYPE ~ variable, sum)
+
+set.seed(42)
+require("ggrepel")
+'
+ggplot( data = Event_Casualty, aes( x = log10(FATALITIES),y=log10(INJURIES))) + 
+        geom_point(color=1:50) +  geom_text_repel(aes(label= EVTYPE),  size=5)
+        
+
+ggplot( data = Event_Casualty, aes( x = log10(PROPDMG),y=log10(CROPDMG))) + 
+        geom_point(color=1:50) +  geom_text_repel(aes(label= EVTYPE),  size=5)
+'
+```
+
+
+
+
+
+
+
