@@ -1,8 +1,8 @@
 ---
 title: "RepData_PeerAssessment2"
-output: html_document
-author: Tejus
-keep_md: true
+output: 
+    html_document:
+        keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -29,10 +29,10 @@ The data was downloaded from this link [Storm Data](https://d396qusza40orc.cloud
 ```{r DataLoading, cache= TRUE}
 
 # Downloading the data
-#download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "./Data.csv.bz2", method = "curl")
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "./Data.csv.bz2", method = "curl")
 
 #Reading data
-Data <- read.csv("./Data.csv", header = T)
+Data <- read.csv("./Data.csv.bz2", header = T)
 # Dim 902297*37
 
 head(Data[1:6])
